@@ -1,21 +1,17 @@
-import os
+import os, random, discord
 from dotenv import load_dotenv
-import discord
 from discord.ext import commands
-import random
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
 client = commands.Bot(command_prefix='-')
 
-
 @client.event
 async def on_ready():
     activity = discord.Game(name="Counter-Strike: Global Offensive", type=3)
     await client.change_presence(activity=activity)
     print('Success!')
-
 
 @client.command()
 async def hello(ctx):
