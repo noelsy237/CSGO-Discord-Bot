@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord.utils import get
 from discord import FFmpegPCMAudio
+from asyncio import sleep
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -17,19 +18,19 @@ async def on_ready():
 
 @client.command()
 async def hello(ctx):
+    #https://github.com/Rapptz/discord.py/blob/master/examples/basic_voice.py
     audio, text = random.choice(list(audioText.items()))
-    if ctx.message.author.voice:
-        channel = ctx.message.author.voice.channel
-        voice = get(client.voice_clients, guild=ctx.guild)
-        if voice and voice.is_connected():
-            await voice.move_to(channel)
-        else:
-            voice = await channel.connect()
-        voice.play(discord.FFmpegPCMAudio(executable=r"ffmpeg.exe", source=f"audio/{audio}.wav"))
+    if ctx.author.voice and ctx.author.voice.channel:
+        authorChannel = ctx.author.voice.channel
+        print(ctx.voice_client.channel)
+        if ctx.voice_client is None:
+            await authorChannel.connect()
+        elif ctx.voice_client.channel != authorChannel:
+            await ctx.voice_client.disconnect()
+            await authorChannel.connect()
+        ctx.voice_client.play(discord.FFmpegPCMAudio(executable=r"ffmpeg.exe", source=f"audio/{audio}.wav"))
         await ctx.send(text)
-
     else:
         await ctx.send("You are not connected to a voice channel.")
-        return
 
 client.run(token)
