@@ -1,9 +1,7 @@
 import os, random, discord, json
 from dotenv import load_dotenv
 from discord.ext import commands
-from discord.utils import get
 from discord import FFmpegPCMAudio
-from asyncio import sleep
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -22,7 +20,6 @@ async def hello(ctx):
     audio, text = random.choice(list(audioText.items()))
     if ctx.author.voice and ctx.author.voice.channel:
         authorChannel = ctx.author.voice.channel
-        print(ctx.voice_client.channel)
         if ctx.voice_client is None:
             await authorChannel.connect()
         elif ctx.voice_client.channel != authorChannel:
