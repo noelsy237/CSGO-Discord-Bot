@@ -13,16 +13,11 @@ audioText = json.load(open('audio.json'))
 async def on_ready():
     activity = discord.Game(name="Counter-Strike: Global Offensive", type=3)
     await client.change_presence(activity=activity)
-    print('Success!') #temp
+    print('Success!')
 
 @client.command()
 async def hello(ctx):
     audio, text = random.choice(list(audioText.items()))
-    await playAudio(ctx, audio)
-    await ctx.send(text)
-
-# Play audio for given track id
-async def playAudio(ctx, audio):
     if ctx.message.author.voice:
         channel = ctx.message.author.voice.channel
         voice = get(client.voice_clients, guild=ctx.guild)
@@ -31,7 +26,10 @@ async def playAudio(ctx, audio):
         else:
             voice = await channel.connect()
         voice.play(discord.FFmpegPCMAudio(executable=r"ffmpeg.exe", source=f"audio/{audio}.wav"))
+        await ctx.send(text)
+
     else:
         await ctx.send("You are not connected to a voice channel.")
         return
+
 client.run(token)
