@@ -7,6 +7,7 @@ load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='-')
 audioText = json.load(open('audio.json'))
+discord.opus.load_opus()
 
 @bot.event
 async def on_ready():
