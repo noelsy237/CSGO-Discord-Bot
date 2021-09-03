@@ -7,7 +7,9 @@ __pycache__/
 *.so
 
 #ffmpeg
-/ffmpeg.exe
+ffmpeg.exe
+
+csgobot.sqlite
 
 # Distribution / packaging
 .Python

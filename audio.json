@@ -2,16 +2,16 @@
     "felix": [
         {
             "felix/fang/breach_charge_nag": "What are you daft? Pick up the charge and get moving.",
-            "felix/fang/breach_charge_pickup" : "Do you know what sort of deal I had to make with Booth to get that breach?",
-            "felix/fang/end" : "I was worried I had to be delivering bad news tonight.",
-            "felix/fang/exit_blocked" : "Bollocks this is bad.",
-            "felix/fang/final_room" : "That's a god damn tank!",
-            "felix/fang/intro" : "Desperate times and blah blah blah.",
-            "felix/fang/investigate_farm" : "That does not look like regular farm equipment",
-            "felix/fang/second_breach" : "That was on me, sorry mate.",
-            "felix/fang/shoot_truck" : "Would it kill you to try and be subtle.",
-            "felix/fang/sim_entry" : "Woaah, that looks expensive.",
-            "felix/fang/vending_alt" : "Not a fraternity prank.",
+            "felix/fang/breach_charge_pickup": "Do you know what sort of deal I had to make with Booth to get that breach?",
+            "felix/fang/end": "I was worried I had to be delivering bad news tonight.",
+            "felix/fang/exit_blocked": "Bollocks this is bad.",
+            "felix/fang/final_room": "That's a god damn tank!",
+            "felix/fang/intro": "Desperate times and blah blah blah.",
+            "felix/fang/investigate_farm": "That does not look like regular farm equipment",
+            "felix/fang/second_breach": "That was on me, sorry mate.",
+            "felix/fang/shoot_truck": "Would it kill you to try and be subtle.",
+            "felix/fang/sim_entry": "Woaah, that looks expensive.",
+            "felix/fang/vending": "Not a fraternity prank.",
             "felix/hydra/complete_06": "I think you two earned some RNR.",
             "felix/hydra/complete_08": "Kotaro and Carmen couldn't have done it better.",
             "felix/hydra/complete_11": "This is just the beginning.",
@@ -20,7 +20,7 @@
             "felix/hydra/complete_22": "You're alive!",
             "felix/hydra/complete_23": "I'll handle the paperwork.",
             "felix/hydra/complete_26": "I wasn't worried for a second.",
-            "felix/hydra/complete_27 ": "I'm proud of you operators.",
+            "felix/hydra/complete_27": "I'm proud of you operators.",
             "felix/hydra/complete_28": "You earned your hazard pay today.",
             "felix/hydra/complete_29": "We don't do this for the glory.",
             "felix/hydra/complete_35": "You deserve a promotion.",
@@ -70,15 +70,15 @@
     ],
     "legacy": [
         {
-            "legacy/aw_hell" : "Aw hell",
-            "legacy/thats_the_way" : "That's the way this is done.",
-            "legacy/this_is_my_house" : "This is my house.",
-            "legacy/very_nice" : "Very nice.",
-            "legacy/way_to_be_team" : "Way to be team.",
-            "legacy/who_wants_some" : "Who wants some.",
-            "legacy/whoo" : "Whoo",
-            "legacy/yea_baby" : "Give it up baby.",
-            "legacy/yesss2" : "Yesss"
+            "legacy/aw_hell": "Aw hell",
+            "legacy/thats_the_way": "That's the way this is done.",
+            "legacy/this_is_my_house": "This is my house.",
+            "legacy/very_nice": "Very nice.",
+            "legacy/way_to_be_team": "Way to be team.",
+            "legacy/who_wants_some": "Who wants some.",
+            "legacy/whoo": "Whoo",
+            "legacy/yea_baby": "Give it up baby.",
+            "legacy/yesss2": "Yesss"
         }
     ]
 }
