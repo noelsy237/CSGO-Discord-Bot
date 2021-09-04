@@ -6,9 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
-#ffmpeg
+#personal
 ffmpeg.exe
-
 database.db
 
 # Distribution / packaging
