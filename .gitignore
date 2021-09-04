@@ -9,7 +9,7 @@ __pycache__/
 #ffmpeg
 ffmpeg.exe
 
-csgobot.sqlite
+database.db
 
 # Distribution / packaging
 .Python
