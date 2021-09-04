@@ -32,8 +32,8 @@ async def on_voice_state_update(member, before, after):
 
 @bot.command()
 async def help(ctx):
-    await ctx.send("Hello operator! You can say hi to me by typing '-hi' followed by any of the following options```felix, legacy, hostage\n\nExample: -hi felix```")
-    await ctx.send("You can also add suspected cheaters to a tracking list by ```-vac community_url or steamid```. The bot will send a message if they get banned")
+    await ctx.send("Hello operator! You can say hi to me by typing '-hi' followed by any of the following options`felix, legacy, hostage\n\nExample: -hi felix`")
+    await ctx.send("You can also add suspected cheaters to a tracking list by `-vac community_url`. The bot will send a message if they get banned")
 
 
 @bot.command()
@@ -73,9 +73,10 @@ async def vac(ctx, input=None):
     
         if error is None:
             cur = db.cursor()
-            cur.execute('INSERT INTO players (steamID, author, addedDate, notified) VALUES (?, ?, ?, ?)', (userId, str(ctx.author), datetime.datetime.now(), 0))
+            print(ctx.author.id)
+            cur.execute('INSERT INTO players (steamID, author, addedDate, notified) VALUES (?, ?, ?, ?)', (userId, str(ctx.author.id), datetime.datetime.now(), 0))
             db.commit()
-            await ctx.message.delete()
+            await ctx.message.delete() 
             await ctx.send(f"Player with ID {userId} added to tracking list.")
             await called_once_a_day_vac(userId)
         else:
@@ -98,27 +99,28 @@ async def called_once_a_day_vac(userId=None):
             playersDict[steamdID] = [author, conv_date]
     else:
         playersDB = cur.execute('SELECT author, datetime(addedDate) FROM players WHERE steamID = ?', (userId,)).fetchone()
-        playersDict[userId] = (playersDB[0], playersDB[1])
+        playersDict[userId] = (playersDB[0], datetime.datetime.strptime(playersDB[1], "%Y-%m-%d %H:%M:%S").date().strftime("%d/%m/%Y"))
 
     for playerId, values in playersDict.items():
         player = json.loads(requests.get(f'http://api.steampowered.com/ISteamUser/GetPlayerBans/v1/?key={steamToken}&steamids={playerId}').text)['players'][0]
+        banField = None
         vacBan = player['VACBanned']
+        vacAmount = player['NumberOfVACBans']
         gameAmount = player['NumberOfGameBans']
         banDay = player['DaysSinceLastBan']
         banProfile = f"https://steamcommunity.com/profiles/{playerId}"
         if vacBan:
-            vacAmount = player['NumberOfVACBans']
-            msg = f"Vac Ban Detected. {playerId}, Number of Bans: {vacAmount}"
-        if gameAmount > 0:
-            msg = f"Game Ban Detected. {playerId}, Number of Bans: {gameAmount}"
-        if msg:
+            banField = "VAC"
+        elif gameAmount > 0:
+            banField = "Game"
+        if banField:
             playerEmbed = discord.Embed(title = "Ban Detected", colour = 15158332)
             playerEmbed.add_field(name="Profile", value=f"[Steam]({banProfile})")
-            playerEmbed.add_field(name="Type", value="VAC")
+            playerEmbed.add_field(name="Type", value=f"{banField}")
             playerEmbed.add_field(name="Last Ban", value=f"{banDay} day/s ago")
+            playerEmbed.add_field(name="Total Bans", value=vacAmount)
             playerEmbed.add_field(name="Add Date", value=values[1])
-            playerEmbed.add_field(name="Added By", value=values[0])
-            msg = msg + f", Last Ban: {banDay}. Player was added on {values[1]} by {values[0]}"
+            playerEmbed.add_field(name="Added By", value=f"<@!{values[0]}>")
             await channel.send(embed=playerEmbed)
             cur.execute('UPDATE players SET notified = 1 WHERE steamID = ?', (playerId,))        
             db.commit()
