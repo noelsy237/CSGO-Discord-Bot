@@ -8,7 +8,7 @@ __pycache__/
 
 #personal
 ffmpeg.exe
-database.db
+csgobot.db
 
 # Distribution / packaging
 .Python
