@@ -7,7 +7,7 @@ from steam.steamid import SteamID
 from database import get_db
 
 # Oath2 URL:
-'''https://discord.com/api/oauth2/authorize?client_id=883904442313891900&permissions=36793344&redirect_uri=https%3A%2F%2Fdiscord.com%2Fapp
+'''https://discord.com/api/oauth2/authorize?client_id=881401966377463860&permissions=36793344&redirect_uri=https%3A%2F%2Fdiscord.com%2Fapp
 &response_type=code&scope=identify%20bot'''
 
 
@@ -124,7 +124,7 @@ async def vac(ctx, input=None, playerLink=None):
                 (userId, str(ctx.author.id), datetime.datetime.now(), 0, ctx.guild.id))
             db.commit()
             await ctx.send(f"Player with ID {userId} added to tracking list.")
-            await called_once_a_day_vac(userId)
+            await called_once_a_day_vac(userId, ctx.guild.id)
         else:
             await ctx.send(error)
     else:
@@ -142,7 +142,12 @@ async def channel(ctx, channelId):
     db.commit()
     await ctx.send("Alert channel updated successfully.")
 
+@bot.command()
+async def dc(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
 
+        
 ## Functions
 # Show a list of players
 async def showList(ctx, type):
@@ -196,14 +201,14 @@ def formatDateTime(dateTime):
 ## Scheduled Functions
 # Check if any tracked player is banned
 @tasks.loop(hours=24)
-async def called_once_a_day_vac(userId=None):
+async def called_once_a_day_vac(userId=None, guildId=None):
     db = get_db()
     playersDict = {}
-    if userId is None:
+    if userId is None and guildId is None:
         playersDict = getAllPlayers(0)
     else:
-        playersDB = db.execute('SELECT author, datetime(add_date), guild_id FROM players WHERE steam_id = ?', (userId,)).fetchone()
-        playersDict[userId] = (playersDB[0], datetime.datetime.strptime(playersDB[1], "%Y-%m-%d %H:%M:%S").date().strftime("%d/%m/%Y"), int(playersDB[2]))
+        playersDB = db.execute('SELECT author, datetime(add_date) FROM players WHERE steam_id = ?', (userId,)).fetchone()
+        playersDict[userId] = (playersDB[0], datetime.datetime.strptime(playersDB[1], "%Y-%m-%d %H:%M:%S").date().strftime("%d/%m/%Y"), guildId)
 
     for playerId, values in playersDict.items():
         player = json.loads(requests.get(f'http://api.steampowered.com/ISteamUser/GetPlayerBans/v1/?key={steamToken}&steamids={playerId}').text)['players'][0]
