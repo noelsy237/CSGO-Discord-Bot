@@ -1,5 +1,5 @@
 FROM python:slim
-WORKDIR /usr/src/app
+WORKDIR /app
 COPY . .
 
 RUN apt-get update && apt-get install -y ffmpeg libopus0 && rm -rf /var/lib/apt/lists/*
