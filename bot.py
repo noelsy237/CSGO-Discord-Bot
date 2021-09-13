@@ -1,10 +1,12 @@
-import os, random, discord, json, requests, datetime
+import os, random, discord, json, requests, datetime, validators
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from discord import FFmpegPCMAudio, Color
 from asyncio import sleep
 from steam.steamid import SteamID
 from database import get_db
+from youtube_dl import YoutubeDL
+from pyyoutube import Api
 
 # Oath2 URL:
 '''https://discord.com/api/oauth2/authorize?client_id=881401966377463860&permissions=36793344&redirect_uri=https%3A%2F%2Fdiscord.com%2Fapp
@@ -14,10 +16,12 @@ from database import get_db
 load_dotenv()
 discordToken = os.getenv('DISCORD_TOKEN')
 steamToken = os.getenv('STEAM_TOKEN')
-bot = commands.Bot(command_prefix='-')
+googleToken = os.getenv('GOOGLE_TOKEN')
+bot = commands.Bot(command_prefix='!')
 audioText = json.load(open('audio.json'))
+ytApi = Api(api_key=googleToken)
 bot.remove_command('help')
-
+authorisedMusicGuildIds = [851353987025600554, 438667788962496534]
 
 ## Events
 # Init function
@@ -65,12 +69,15 @@ async def on_voice_state_update(member, before, after):
 @bot.command()
 async def help(ctx):
     helpEmbed = discord.Embed(title = "Hello operator!", colour = Color.teal())
-    helpEmbed.add_field(name="-hi", value="Use any option to hear an audio clip.")
+    helpEmbed.add_field(name="!hi", value="Use any option to hear an audio clip.")
     helpEmbed.add_field(name="Options", value="[felix] [legacy] [hostage]\n\nExample: -hi felix")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-    helpEmbed.add_field(name="-vac", value="""Add a suspected cheater to a tracking list by using their profile url. 
+    helpEmbed.add_field(name="!vac", value="""Add a suspected cheater to a tracking list by using their profile url. 
         You can also retrieve a list of all players being tracked or banned""")
     helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: -vac https://steamcommunity.com/id/Micky2000")
+    helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
+    helpEmbed.add_field(name="!p", value="Supply a Youtube link or keywords to play audio. (Only on authorised servers)")
+    helpEmbed.add_field(name="Options", value="[url] [keywords] \n\nExample: -p bad piggies")
     await ctx.send(embed=helpEmbed)
 
 # Play a random audio clip from game files
@@ -142,12 +149,77 @@ async def channel(ctx, channelId):
     db.commit()
     await ctx.send("Alert channel updated successfully.")
 
-@bot.command()
+# Disconnect bot
+@bot.command(aliases=['disconnect'])
 async def dc(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
 
-        
+# Initiate new music play session
+@bot.command(aliases=['play'])
+async def p(ctx, input):    
+    if ctx.guild.id in authorisedMusicGuildIds and input:
+        if ctx.author.voice and ctx.author.voice.channel:
+            YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist': 'True'}
+            FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+            musicEmbed = discord.Embed(title = "Music", colour = Color.red())
+            authorChannel = ctx.author.voice.channel
+            if ctx.voice_client is None:
+                await authorChannel.connect()
+            elif ctx.voice_client.channel != authorChannel:
+                await ctx.voice_client.disconnect()
+                await authorChannel.connect()
+            if validators.url(input):
+                with YoutubeDL(YDL_OPTIONS) as ydl:
+                    info = ydl.extract_info(input, download=False)
+                URL = info['url']
+                ctx.voice_client.play(FFmpegPCMAudio(URL, **FFMPEG_OPTIONS))
+                musicEmbed.add_field(name="URL", value=f"{URL}")
+                await ctx.send('Bot is playing.')
+            else:
+                result = ytApi.search_by_keywords(q=input, search_type=["video"], count=1, limit=1)
+                print(result.items[0])
+            await ctx.send(embed=musicEmbed)
+        else:
+            await ctx.send("You are not connected to a voice channel.")
+    else:
+        await ctx.send("Either the input was invalid, or this server is not authorised to use this feature.")
+    
+# Resume music 
+@bot.command()
+async def resume(ctx):
+    if ctx.guild.id in authorisedMusicGuildIds:
+        if ctx.author.voice and ctx.author.voice.channel:
+            authorChannel = ctx.author.voice.channel
+            if ctx.voice_client.channel == authorChannel:
+                if not ctx.voice_client.is_playing():
+                    ctx.voice_client.resume()
+                    await ctx.send('Bot is resuming.')
+            else:
+                await ctx.send("You are not connected to the same voice channel.")
+        else:
+            await ctx.send("You are not connected to a voice channel.")
+    else:
+        await ctx.send("This server is not authorised to use this feature.")
+
+# Pause music
+@bot.command()
+async def pause(ctx):
+    if ctx.guild.id in authorisedMusicGuildIds:
+        if ctx.author.voice and ctx.author.voice.channel:
+            authorChannel = ctx.author.voice.channel
+            if ctx.voice_client.channel == authorChannel:
+                if ctx.voice_client.is_playing():
+                    ctx.voice_client.pause()
+                    await ctx.send('Bot has been paused.')
+            else:
+                await ctx.send("You are not connected to the same voice channel.")
+        else:
+            await ctx.send("You are not connected to a voice channel.")
+    else:
+        await ctx.send("This server is not authorised to use this feature.")
+
+
 ## Functions
 # Show a list of players
 async def showList(ctx, type):

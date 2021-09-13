@@ -3,3 +3,5 @@ discord.py[voice]
 discord
 PyNaCl
 steam
+youtube-data-api
+youtube-dl
