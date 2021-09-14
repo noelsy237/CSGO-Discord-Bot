@@ -17,7 +17,7 @@ load_dotenv()
 discordToken = os.getenv('DISCORD_TOKEN')
 steamToken = os.getenv('STEAM_TOKEN')
 googleToken = os.getenv('GOOGLE_TOKEN')
-bot = commands.Bot(command_prefix='-')
+bot = commands.Bot(command_prefix='!')
 audioText = json.load(open('audio.json'))
 ytApi = Api(api_key=googleToken)
 bot.remove_command('help')
@@ -178,7 +178,7 @@ async def p(ctx, input):
             with YoutubeDL(YDL_OPTIONS) as ydl:
                 info = ydl.extract_info(input, download=False)
             ctx.voice_client.play(FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS))
-            
+
             musicEmbed.add_field(name="Title", value=f"{info['title']}")
             musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
             musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
