@@ -17,7 +17,7 @@ load_dotenv()
 discordToken = os.getenv('DISCORD_TOKEN')
 steamToken = os.getenv('STEAM_TOKEN')
 googleToken = os.getenv('GOOGLE_TOKEN')
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='-')
 audioText = json.load(open('audio.json'))
 ytApi = Api(api_key=googleToken)
 bot.remove_command('help')
@@ -77,7 +77,9 @@ async def help(ctx):
     helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: -vac https://steamcommunity.com/id/Micky2000")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     helpEmbed.add_field(name="!p", value="Supply a Youtube link or keywords to play audio. (Only on authorised servers)")
-    helpEmbed.add_field(name="Options", value="[url] [keywords] \n\nExample: -p bad piggies")
+    helpEmbed.add_field(name="Options", value="""[url] [keyword] \n\nExample: -p bad piggies
+        \n\nYou can also pause and resume playback with [!pause] [!resume]""")
+    helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     await ctx.send(embed=helpEmbed)
 
 # Play a random audio clip from game files
@@ -98,8 +100,8 @@ async def hi(ctx, type=None):
             audio, text = random.choice(list(audioText['hostage'][0].items()))
         elif type == "legacy":
             audio, text = random.choice(list(audioText['legacy'][0].items()))
-        ctx.voice_client.play(discord.FFmpegPCMAudio(source=f"audio/{audio}.wav"))
         await ctx.send(text)
+        ctx.voice_client.play(discord.FFmpegPCMAudio(source=f"audio/{audio}.wav"))
     else:
         await ctx.send("You are not connected to a voice channel.")
 
@@ -160,25 +162,28 @@ async def dc(ctx):
 async def p(ctx, input):    
     if ctx.guild.id in authorisedMusicGuildIds and input:
         if ctx.author.voice and ctx.author.voice.channel:
-            YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist': 'True'}
+            YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': 'True'}
             FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-            musicEmbed = discord.Embed(title = "Music", colour = Color.red())
+            musicEmbed = discord.Embed(title = "Music is playing", colour = Color.blue())
             authorChannel = ctx.author.voice.channel
             if ctx.voice_client is None:
                 await authorChannel.connect()
             elif ctx.voice_client.channel != authorChannel:
                 await ctx.voice_client.disconnect()
                 await authorChannel.connect()
-            if validators.url(input):
-                with YoutubeDL(YDL_OPTIONS) as ydl:
-                    info = ydl.extract_info(input, download=False)
-                URL = info['url']
-                ctx.voice_client.play(FFmpegPCMAudio(URL, **FFMPEG_OPTIONS))
-                musicEmbed.add_field(name="URL", value=f"{URL}")
-                await ctx.send('Bot is playing.')
-            else:
+            if not validators.url(input):
                 result = ytApi.search_by_keywords(q=input, search_type=["video"], count=1, limit=1)
-                print(result.items[0])
+                input = result.items[0].id.videoId
+
+            with YoutubeDL(YDL_OPTIONS) as ydl:
+                info = ydl.extract_info(input, download=False)
+            ctx.voice_client.play(FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS))
+            
+            musicEmbed.add_field(name="Title", value=f"{info['title']}")
+            musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
+            musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
+            musicEmbed.add_field(name="Duration (Mins)", value=f"{str(round(float(info['duration']/60),2))}")
+            musicEmbed.add_field(name="Filesize (MB)", value=f"{str(round(float(info['filesize']/1024/1024),2))}")
             await ctx.send(embed=musicEmbed)
         else:
             await ctx.send("You are not connected to a voice channel.")
