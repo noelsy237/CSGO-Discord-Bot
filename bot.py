@@ -21,7 +21,8 @@ bot = commands.Bot(command_prefix='!')
 audioText = json.load(open('audio.json'))
 ytApi = Api(api_key=googleToken)
 bot.remove_command('help')
-authorisedMusicGuildIds = [851353987025600554, 438667788962496534]
+# Only certain servers can use music functionality
+authorisedMusicGuildIds = [851353987025600554, 438667788962496534] #Gaming Hub & Legend
 
 ## Events
 # Init function
@@ -139,7 +140,7 @@ async def vac(ctx, input=None, playerLink=None):
     else:
         await ctx.send("You must supply a community profile URL.")
 
-# Add a player to the tracking list for ban checking
+# Set the alert channel id for bans
 @bot.command()
 @commands.has_guild_permissions(manage_guild=True)
 async def channel(ctx, channelId):
@@ -151,12 +152,6 @@ async def channel(ctx, channelId):
     db.commit()
     await ctx.send("Alert channel updated successfully.")
 
-# Disconnect bot
-@bot.command(aliases=['disconnect'])
-async def dc(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-
 # Initiate new music play session
 @bot.command(aliases=['play'])
 async def p(ctx, input):    
@@ -164,19 +159,26 @@ async def p(ctx, input):
         if ctx.author.voice and ctx.author.voice.channel:
             YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': 'True'}
             FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-            musicEmbed = discord.Embed(title = "Music is playing", colour = Color.blue())
+            musicEmbed = discord.Embed(title = "Playing", colour = Color.blue())
             authorChannel = ctx.author.voice.channel
             if ctx.voice_client is None:
                 await authorChannel.connect()
             elif ctx.voice_client.channel != authorChannel:
                 await ctx.voice_client.disconnect()
                 await authorChannel.connect()
+            if ctx.voice_client.is_playing():
+                await ctx.send("Audio is already playing. Queue functonality not yet implemented.")
+                return
             if not validators.url(input):
-                result = ytApi.search_by_keywords(q=input, search_type=["video"], count=1, limit=1)
+                result = ytApi.search_by_keywords(q=input, search_type=["video"], count=1, relevance_language="EN", safe_search="none")
                 input = result.items[0].id.videoId
+
 
             with YoutubeDL(YDL_OPTIONS) as ydl:
                 info = ydl.extract_info(input, download=False)
+                if info['duration'] > 5400 :
+                    await ctx.send("Audio duration is too long. Maximum 1.5 hours")
+                    return
             ctx.voice_client.play(FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS))
 
             musicEmbed.add_field(name="Title", value=f"{info['title']}")
@@ -195,11 +197,10 @@ async def p(ctx, input):
 async def resume(ctx):
     if ctx.guild.id in authorisedMusicGuildIds:
         if ctx.author.voice and ctx.author.voice.channel:
-            authorChannel = ctx.author.voice.channel
-            if ctx.voice_client.channel == authorChannel:
+            if ctx.voice_client.channel == ctx.author.voice.channel:
                 if not ctx.voice_client.is_playing():
                     ctx.voice_client.resume()
-                    await ctx.send('Bot is resuming.')
+                    await ctx.send('Audio is resuming.')
             else:
                 await ctx.send("You are not connected to the same voice channel.")
         else:
@@ -212,11 +213,10 @@ async def resume(ctx):
 async def pause(ctx):
     if ctx.guild.id in authorisedMusicGuildIds:
         if ctx.author.voice and ctx.author.voice.channel:
-            authorChannel = ctx.author.voice.channel
-            if ctx.voice_client.channel == authorChannel:
+            if ctx.voice_client.channel == ctx.author.voice.channel:
                 if ctx.voice_client.is_playing():
                     ctx.voice_client.pause()
-                    await ctx.send('Bot has been paused.')
+                    await ctx.send('Audio has been paused.')
             else:
                 await ctx.send("You are not connected to the same voice channel.")
         else:
@@ -224,6 +224,21 @@ async def pause(ctx):
     else:
         await ctx.send("This server is not authorised to use this feature.")
 
+# Disconnect bot
+@bot.command(aliases=['dc'])
+async def disconnect(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+
+# Skip music
+@bot.command(aliases=['s'])
+async def skip(ctx):
+    if ctx.guild.id in authorisedMusicGuildIds:
+            if ctx.author.voice and ctx.author.voice.channel:
+                if ctx.voice_client.channel == ctx.author.voice.channel:
+                    if ctx.voice_client.is_playing():
+                        ctx.voice_client.stop()
+                        await ctx.send('Skipped.')
 
 ## Functions
 # Show a list of players
@@ -319,7 +334,6 @@ async def called_once_a_day_vac(userId=None, guildId=None):
 async def before():
     await bot.wait_until_ready()
     print("Finished waiting for daily check")
-
 
 # Main run
 called_once_a_day_vac.start()
