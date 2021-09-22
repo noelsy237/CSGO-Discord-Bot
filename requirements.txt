@@ -3,6 +3,4 @@ discord.py[voice]
 discord
 PyNaCl
 steam
-python-youtube
 youtube-dl
-validators
