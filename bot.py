@@ -1,12 +1,10 @@
-import os, random, discord, json, requests, datetime, validators
+import os, random, discord, json, requests, datetime
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from discord import FFmpegPCMAudio, Color
-from asyncio import sleep
 from steam.steamid import SteamID
 from database import get_db
 from youtube_dl import YoutubeDL
-from pyyoutube import Api
 
 # Oath2 URL:
 '''https://discord.com/api/oauth2/authorize?client_id=881401966377463860&permissions=36793344&redirect_uri=https%3A%2F%2Fdiscord.com%2Fapp
@@ -16,10 +14,8 @@ from pyyoutube import Api
 load_dotenv()
 discordToken = os.getenv('DISCORD_TOKEN')
 steamToken = os.getenv('STEAM_TOKEN')
-googleToken = os.getenv('GOOGLE_TOKEN')
 bot = commands.Bot(command_prefix='!')
 audioText = json.load(open('audio.json'))
-ytApi = Api(api_key=googleToken)
 bot.remove_command('help')
 # Only certain servers can use music functionality
 authorisedMusicGuildIds = [851353987025600554, 438667788962496534] #Gaming Hub & Legend
@@ -154,10 +150,10 @@ async def channel(ctx, channelId):
 
 # Initiate new music play session
 @bot.command(aliases=['play'])
-async def p(ctx, input):    
+async def p(ctx, *, input):  
     if ctx.guild.id in authorisedMusicGuildIds and input:
         if ctx.author.voice and ctx.author.voice.channel:
-            YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': 'True'}
+            YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': True, 'default_search': 'auto'}
             FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
             musicEmbed = discord.Embed(title = "Playing", colour = Color.blue())
             authorChannel = ctx.author.voice.channel
@@ -169,24 +165,35 @@ async def p(ctx, input):
             if ctx.voice_client.is_playing():
                 await ctx.send("Audio is already playing. Queue functonality not yet implemented.")
                 return
-            if not validators.url(input):
-                result = ytApi.search_by_keywords(q=input, search_type=["video"], count=1, relevance_language="EN", safe_search="none")
-                input = result.items[0].id.videoId
-
 
             with YoutubeDL(YDL_OPTIONS) as ydl:
-                info = ydl.extract_info(input, download=False)
-                if info['duration'] > 5400 :
+                video = ydl.extract_info(input, download=False)
+
+                if 'entries' in video: info = video['entries'][0]    
+                elif 'formats' in video: info = video
+                else: 
+                    await ctx.send("Error, please try again later.")
+                    return
+
+                title = info['title']
+                thumbnail = info['thumbnail']
+                url = info["url"]
+                duration = info['duration']
+                filesize = info['filesize']
+                
+                if duration > 5400:
                     await ctx.send("Audio duration is too long. Maximum 1.5 hours")
                     return
-            ctx.voice_client.play(FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS))
+                
+                ctx.voice_client.play(FFmpegPCMAudio(url, **FFMPEG_OPTIONS))
 
-            musicEmbed.add_field(name="Title", value=f"{info['title']}")
-            musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
-            musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-            musicEmbed.add_field(name="Duration (Mins)", value=f"{str(round(float(info['duration']/60),2))}")
-            musicEmbed.add_field(name="Filesize (MB)", value=f"{str(round(float(info['filesize']/1024/1024),2))}")
-            await ctx.send(embed=musicEmbed)
+                musicEmbed.add_field(name="Title", value=f"{title}")
+                musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
+                musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
+                musicEmbed.add_field(name="Duration (Mins)", value=f"{str(round(float(duration/60),2))}")
+                musicEmbed.add_field(name="Filesize (MB)", value=f"{str(round(float(filesize/1024/1024),2))}")
+                musicEmbed.set_thumbnail(url=thumbnail)
+                await ctx.send(embed=musicEmbed)
         else:
             await ctx.send("You are not connected to a voice channel.")
     else:

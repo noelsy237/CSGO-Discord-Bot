@@ -9,6 +9,7 @@ __pycache__/
 #personal
 ffmpeg.exe
 csgobot.db
+example.json
 
 # Distribution / packaging
 .Python
