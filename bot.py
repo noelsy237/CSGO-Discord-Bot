@@ -14,7 +14,7 @@ from youtube_dl import YoutubeDL
 load_dotenv()
 discordToken = os.getenv('DISCORD_TOKEN')
 steamToken = os.getenv('STEAM_TOKEN')
-bot = commands.Bot(command_prefix='-')
+bot = commands.Bot(command_prefix='!')
 audioText = json.load(open('audio.json'))
 bot.remove_command('help')
 # Only certain servers can use music functionality
@@ -60,11 +60,11 @@ async def on_voice_state_update(member, before, after):
     if len(voice_state.channel.members) == 1:
         await voice_state.disconnect()
 
-@bot.event
-async def on_message(message):
-    if bot.user.mentioned_in(message):
-        await message.channel.send("Hello there! Ask for help with !help.")
-    await bot.process_commands(message)
+# @bot.event
+# async def on_message(message):
+#     if bot.user.mentioned_in(message):
+#         await message.channel.send("Hello there! If you are in need of a hand, try !help.")
+#     await bot.process_commands(message)
 
 ## Commands
 # Help command
