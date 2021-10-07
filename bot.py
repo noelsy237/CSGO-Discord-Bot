@@ -60,6 +60,10 @@ async def on_voice_state_update(member, before, after):
     if len(voice_state.channel.members) == 1:
         await voice_state.disconnect()
 
+@bot.event
+async def on_message(message):
+    if bot.user.mentioned_in(message):
+        await message.channel.send("Hello there! Ask for help with !help.")
 
 ## Commands
 # Help command
