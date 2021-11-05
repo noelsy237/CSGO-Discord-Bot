@@ -72,14 +72,14 @@ async def on_voice_state_update(member, before, after):
 async def help(ctx):
     helpEmbed = discord.Embed(title = "Hello operator!", colour = Color.teal())
     helpEmbed.add_field(name="!hi", value="Use any option to hear an audio clip.")
-    helpEmbed.add_field(name="Options", value="[felix] [legacy] [hostage]\n\nExample: -hi felix")
+    helpEmbed.add_field(name="Options", value="[felix] [legacy] [hostage]\n\nExample: !hi felix")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     helpEmbed.add_field(name="!vac", value="""Add a suspected cheater to a tracking list by using their profile url. 
         You can also retrieve a list of all players being tracked or banned""")
-    helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: -vac https://steamcommunity.com/id/Micky2000")
+    helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: !vac https://steamcommunity.com/id/Micky2000")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     helpEmbed.add_field(name="!p", value="Supply a Youtube link or keywords to play audio. (Only on authorised servers)")
-    helpEmbed.add_field(name="Options", value="""[url] [keyword] \n\nExample: -p bad piggies
+    helpEmbed.add_field(name="Options", value="""[url] [keyword] \n\nExample: !p bad piggies
         \n\nYou can also pause and resume playback with [!pause] [!resume]""")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     await ctx.send(embed=helpEmbed)
