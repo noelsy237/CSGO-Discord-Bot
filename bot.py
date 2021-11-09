@@ -1,24 +1,22 @@
 import os, random, discord, json, requests, datetime
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
-from discord import FFmpegPCMAudio, Color
+from discord import Color
 from steam.steamid import SteamID
 from database import get_db
-from youtube_dl import YoutubeDL
 
-# Oath2 URL:
-'''https://discord.com/api/oauth2/authorize?client_id=881401966377463860&permissions=36793344&redirect_uri=https%3A%2F%2Fdiscord.com%2Fapp
-&response_type=code&scope=identify%20bot'''
-
+#from youtube_dl import YoutubeDL
+#from discord import FFmpegPCMAudio
 
 load_dotenv()
 discordToken = os.getenv('DISCORD_TOKEN')
 steamToken = os.getenv('STEAM_TOKEN')
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='-')
 audioText = json.load(open('audio.json'))
 bot.remove_command('help')
+
 # Only certain servers can use music functionality
-authorisedMusicGuildIds = [851353987025600554, 438667788962496534] #Gaming Hub & Legend
+#authorisedMusicGuildIds = [851353987025600554, 438667788962496534] #Gaming Hub & Legend
 
 ## Events
 # Init function
@@ -60,28 +58,22 @@ async def on_voice_state_update(member, before, after):
     if len(voice_state.channel.members) == 1:
         await voice_state.disconnect()
 
-# @bot.event
-# async def on_message(message):
-#     if bot.user.mentioned_in(message):
-#         await message.channel.send("Hello there! If you are in need of a hand, try !help.")
-#     await bot.process_commands(message)
-
 ## Commands
 # Help command
 @bot.command()
 async def help(ctx):
     helpEmbed = discord.Embed(title = "Hello operator!", colour = Color.teal())
-    helpEmbed.add_field(name="!hi", value="Use any option to hear an audio clip.")
-    helpEmbed.add_field(name="Options", value="[felix] [legacy] [hostage]\n\nExample: !hi felix")
+    helpEmbed.add_field(name="-hi", value="Use any option to hear an audio clip.")
+    helpEmbed.add_field(name="Options", value="[felix] [legacy] [hostage]\n\nExample: -hi felix")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-    helpEmbed.add_field(name="!vac", value="""Add a suspected cheater to a tracking list by using their profile url. 
+    helpEmbed.add_field(name="-vac", value="""Add a suspected cheater to a tracking list by using their profile url. 
         You can also retrieve a list of all players being tracked or banned""")
-    helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: !vac https://steamcommunity.com/id/Micky2000")
+    helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: -vac https://steamcommunity.com/id/Micky2000")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-    helpEmbed.add_field(name="!p", value="Supply a Youtube link or keywords to play audio. (Only on authorised servers)")
-    helpEmbed.add_field(name="Options", value="""[url] [keyword] \n\nExample: !p bad piggies
-        \n\nYou can also pause and resume playback with [!pause] [!resume]""")
-    helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
+    # helpEmbed.add_field(name="!p", value="Supply a Youtube link or keywords to play audio. (Only on authorised servers)")
+    # helpEmbed.add_field(name="Options", value="""[url] [keyword] \n\nExample: !p bad piggies
+    #     \n\nYou can also pause and resume playback with [!pause] [!resume]""")
+    # helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     await ctx.send(embed=helpEmbed)
 
 # Play a random audio clip from game files
@@ -135,7 +127,7 @@ async def vac(ctx, input=None, playerLink=None):
                 (userId, str(ctx.author.id), datetime.datetime.now(), 0, ctx.guild.id))
             db.commit()
             await ctx.send(f"Player with ID {userId} added to tracking list.")
-            await called_once_a_day_vac(userId, ctx.guild.id)
+            await interval_vac_check(userId, ctx.guild.id)
         else:
             await ctx.send(error)
     else:
@@ -154,87 +146,87 @@ async def channel(ctx, channelId):
     await ctx.send("Alert channel updated successfully.")
 
 # Initiate new music play session
-@bot.command(aliases=['play'])
-async def p(ctx, *, input):  
-    if ctx.guild.id in authorisedMusicGuildIds and input:
-        if ctx.author.voice and ctx.author.voice.channel:
-            YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': True, 'default_search': 'auto'}
-            FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-            musicEmbed = discord.Embed(title = "Playing", colour = Color.blue())
-            authorChannel = ctx.author.voice.channel
-            if ctx.voice_client is None:
-                await authorChannel.connect()
-            elif ctx.voice_client.channel != authorChannel:
-                await ctx.voice_client.disconnect()
-                await authorChannel.connect()
-            if ctx.voice_client.is_playing():
-                await ctx.send("Audio is already playing. Queue functonality not yet implemented.")
-                return
+# @bot.command(aliases=['play'])
+# async def p(ctx, *, input):  
+#     if ctx.guild.id in authorisedMusicGuildIds and input:
+#         if ctx.author.voice and ctx.author.voice.channel:
+#             YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': True, 'default_search': 'auto'}
+#             FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+#             musicEmbed = discord.Embed(title = "Playing", colour = Color.blue())
+#             authorChannel = ctx.author.voice.channel
+#             if ctx.voice_client is None:
+#                 await authorChannel.connect()
+#             elif ctx.voice_client.channel != authorChannel:
+#                 await ctx.voice_client.disconnect()
+#                 await authorChannel.connect()
+#             if ctx.voice_client.is_playing():
+#                 await ctx.send("Audio is already playing. Queue functonality not yet implemented.")
+#                 return
 
-            with YoutubeDL(YDL_OPTIONS) as ydl:
-                video = ydl.extract_info(input, download=False)
+#             with YoutubeDL(YDL_OPTIONS) as ydl:
+#                 video = ydl.extract_info(input, download=False)
 
-                if 'entries' in video: info = video['entries'][0]    
-                elif 'formats' in video: info = video
-                else: 
-                    await ctx.send("Error, please try again later.")
-                    return
+#                 if 'entries' in video: info = video['entries'][0]    
+#                 elif 'formats' in video: info = video
+#                 else: 
+#                     await ctx.send("Error, please try again later.")
+#                     return
 
-                title = info['title']
-                thumbnail = info['thumbnail']
-                url = info["url"]
-                duration = info['duration']
-                filesize = info['filesize']
+#                 title = info['title']
+#                 thumbnail = info['thumbnail']
+#                 url = info["url"]
+#                 duration = info['duration']
+#                 filesize = info['filesize']
                 
-                if duration > 5400:
-                    await ctx.send("Audio duration is too long. Maximum 1.5 hours")
-                    return
+#                 if duration > 5400:
+#                     await ctx.send("Audio duration is too long. Maximum 1.5 hours")
+#                     return
                 
-                ctx.voice_client.play(FFmpegPCMAudio(url, **FFMPEG_OPTIONS))
+#                 ctx.voice_client.play(FFmpegPCMAudio(url, **FFMPEG_OPTIONS))
 
-                musicEmbed.add_field(name="Title", value=f"{title}")
-                musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
-                musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-                musicEmbed.add_field(name="Duration (Mins)", value=f"{str(round(float(duration/60),2))}")
-                musicEmbed.add_field(name="Filesize (MB)", value=f"{str(round(float(filesize/1024/1024),2))}")
-                musicEmbed.set_thumbnail(url=thumbnail)
-                await ctx.send(embed=musicEmbed)
-        else:
-            await ctx.send("You are not connected to a voice channel.")
-    else:
-        await ctx.send("Either the input was invalid, or this server is not authorised to use this feature.")
+#                 musicEmbed.add_field(name="Title", value=f"{title}")
+#                 musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
+#                 musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
+#                 musicEmbed.add_field(name="Duration (Mins)", value=f"{str(round(float(duration/60),2))}")
+#                 musicEmbed.add_field(name="Filesize (MB)", value=f"{str(round(float(filesize/1024/1024),2))}")
+#                 musicEmbed.set_thumbnail(url=thumbnail)
+#                 await ctx.send(embed=musicEmbed)
+#         else:
+#             await ctx.send("You are not connected to a voice channel.")
+#     else:
+#         await ctx.send("Either the input was invalid, or this server is not authorised to use this feature.")
     
-# Resume music 
-@bot.command()
-async def resume(ctx):
-    if ctx.guild.id in authorisedMusicGuildIds:
-        if ctx.author.voice and ctx.author.voice.channel:
-            if ctx.voice_client.channel == ctx.author.voice.channel:
-                if not ctx.voice_client.is_playing():
-                    ctx.voice_client.resume()
-                    await ctx.send('Audio is resuming.')
-            else:
-                await ctx.send("You are not connected to the same voice channel.")
-        else:
-            await ctx.send("You are not connected to a voice channel.")
-    else:
-        await ctx.send("This server is not authorised to use this feature.")
+# # Resume music 
+# @bot.command()
+# async def resume(ctx):
+#     if ctx.guild.id in authorisedMusicGuildIds:
+#         if ctx.author.voice and ctx.author.voice.channel:
+#             if ctx.voice_client.channel == ctx.author.voice.channel:
+#                 if not ctx.voice_client.is_playing():
+#                     ctx.voice_client.resume()
+#                     await ctx.send('Audio is resuming.')
+#             else:
+#                 await ctx.send("You are not connected to the same voice channel.")
+#         else:
+#             await ctx.send("You are not connected to a voice channel.")
+#     else:
+#         await ctx.send("This server is not authorised to use this feature.")
 
-# Pause music
-@bot.command()
-async def pause(ctx):
-    if ctx.guild.id in authorisedMusicGuildIds:
-        if ctx.author.voice and ctx.author.voice.channel:
-            if ctx.voice_client.channel == ctx.author.voice.channel:
-                if ctx.voice_client.is_playing():
-                    ctx.voice_client.pause()
-                    await ctx.send('Audio has been paused.')
-            else:
-                await ctx.send("You are not connected to the same voice channel.")
-        else:
-            await ctx.send("You are not connected to a voice channel.")
-    else:
-        await ctx.send("This server is not authorised to use this feature.")
+# # Pause music
+# @bot.command()
+# async def pause(ctx):
+#     if ctx.guild.id in authorisedMusicGuildIds:
+#         if ctx.author.voice and ctx.author.voice.channel:
+#             if ctx.voice_client.channel == ctx.author.voice.channel:
+#                 if ctx.voice_client.is_playing():
+#                     ctx.voice_client.pause()
+#                     await ctx.send('Audio has been paused.')
+#             else:
+#                 await ctx.send("You are not connected to the same voice channel.")
+#         else:
+#             await ctx.send("You are not connected to a voice channel.")
+#     else:
+#         await ctx.send("This server is not authorised to use this feature.")
 
 # Disconnect bot
 @bot.command(aliases=['dc'])
@@ -245,12 +237,11 @@ async def disconnect(ctx):
 # Skip music
 @bot.command(aliases=['s'])
 async def skip(ctx):
-    if ctx.guild.id in authorisedMusicGuildIds:
-            if ctx.author.voice and ctx.author.voice.channel:
-                if ctx.voice_client.channel == ctx.author.voice.channel:
-                    if ctx.voice_client.is_playing():
-                        ctx.voice_client.stop()
-                        await ctx.send('Skipped.')
+    if ctx.author.voice and ctx.author.voice.channel:
+        if ctx.voice_client.channel == ctx.author.voice.channel:
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+                await ctx.send('Skipped.')
 
 ## Functions
 # Show a list of players
@@ -304,8 +295,8 @@ def formatDateTime(dateTime):
 
 ## Scheduled Functions
 # Check if any tracked player is banned
-@tasks.loop(hours=24)
-async def called_once_a_day_vac(userId=None, guildId=None):
+@tasks.loop(hours=2)
+async def interval_vac_check(userId=None, guildId=None):
     db = get_db()
     playersDict = {}
     if userId is None and guildId is None:
@@ -340,13 +331,16 @@ async def called_once_a_day_vac(userId=None, guildId=None):
             db.execute('UPDATE players SET banned = 1 WHERE steam_id = ? AND guild_id = ?', (playerId, values[2]))        
             db.commit()
 
-
 # Daily ban checker
-@called_once_a_day_vac.before_loop
+@interval_vac_check.before_loop
 async def before():
     await bot.wait_until_ready()
-    print("Finished waiting for daily check")
+    print("Finished waiting for interval check")
 
 # Main run
-called_once_a_day_vac.start()
+interval_vac_check.start()
 bot.run(discordToken)
+
+# Oath2 URL:
+'''https://discord.com/api/oauth2/authorize?client_id=881401966377463860&permissions=36793344&redirect_uri=https%3A%2F%2Fdiscord.com%2Fapp
+&response_type=code&scope=identify%20bot'''
