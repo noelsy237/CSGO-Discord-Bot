@@ -5,7 +5,6 @@ from discord import Color
 from steam.steamid import SteamID
 from database import get_db
 
-#from youtube_dl import YoutubeDL
 #from discord import FFmpegPCMAudio
 
 load_dotenv()
@@ -14,9 +13,6 @@ steamToken = os.getenv('STEAM_TOKEN')
 bot = commands.Bot(command_prefix='-')
 audioText = json.load(open('audio.json'))
 bot.remove_command('help')
-
-# Only certain servers can use music functionality
-#authorisedMusicGuildIds = [851353987025600554, 438667788962496534] #Gaming Hub & Legend
 
 ## Events
 # Init function
@@ -70,10 +66,6 @@ async def help(ctx):
         You can also retrieve a list of all players being tracked or banned""")
     helpEmbed.add_field(name="Options", value="[profile] [track] [ban]\n\nExample: -vac https://steamcommunity.com/id/Micky2000")
     helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-    # helpEmbed.add_field(name="!p", value="Supply a Youtube link or keywords to play audio. (Only on authorised servers)")
-    # helpEmbed.add_field(name="Options", value="""[url] [keyword] \n\nExample: !p bad piggies
-    #     \n\nYou can also pause and resume playback with [!pause] [!resume]""")
-    # helpEmbed.add_field(name='\u200b', value="\u200b", inline=False)
     await ctx.send(embed=helpEmbed)
 
 # Play a random audio clip from game files
@@ -145,96 +137,13 @@ async def channel(ctx, channelId):
     db.commit()
     await ctx.send("Alert channel updated successfully.")
 
-# Initiate new music play session
-# @bot.command(aliases=['play'])
-# async def p(ctx, *, input):  
-#     if ctx.guild.id in authorisedMusicGuildIds and input:
-#         if ctx.author.voice and ctx.author.voice.channel:
-#             YDL_OPTIONS = {'format': '250/251/140/249', 'noplaylist': True, 'default_search': 'auto'}
-#             FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-#             musicEmbed = discord.Embed(title = "Playing", colour = Color.blue())
-#             authorChannel = ctx.author.voice.channel
-#             if ctx.voice_client is None:
-#                 await authorChannel.connect()
-#             elif ctx.voice_client.channel != authorChannel:
-#                 await ctx.voice_client.disconnect()
-#                 await authorChannel.connect()
-#             if ctx.voice_client.is_playing():
-#                 await ctx.send("Audio is already playing. Queue functonality not yet implemented.")
-#                 return
-
-#             with YoutubeDL(YDL_OPTIONS) as ydl:
-#                 video = ydl.extract_info(input, download=False)
-
-#                 if 'entries' in video: info = video['entries'][0]    
-#                 elif 'formats' in video: info = video
-#                 else: 
-#                     await ctx.send("Error, please try again later.")
-#                     return
-
-#                 title = info['title']
-#                 thumbnail = info['thumbnail']
-#                 url = info["url"]
-#                 duration = info['duration']
-#                 filesize = info['filesize']
-                
-#                 if duration > 5400:
-#                     await ctx.send("Audio duration is too long. Maximum 1.5 hours")
-#                     return
-                
-#                 ctx.voice_client.play(FFmpegPCMAudio(url, **FFMPEG_OPTIONS))
-
-#                 musicEmbed.add_field(name="Title", value=f"{title}")
-#                 musicEmbed.add_field(name="Requested By", value=f"{ctx.author.name}")
-#                 musicEmbed.add_field(name='\u200b', value="\u200b", inline=False)
-#                 musicEmbed.add_field(name="Duration (Mins)", value=f"{str(round(float(duration/60),2))}")
-#                 musicEmbed.add_field(name="Filesize (MB)", value=f"{str(round(float(filesize/1024/1024),2))}")
-#                 musicEmbed.set_thumbnail(url=thumbnail)
-#                 await ctx.send(embed=musicEmbed)
-#         else:
-#             await ctx.send("You are not connected to a voice channel.")
-#     else:
-#         await ctx.send("Either the input was invalid, or this server is not authorised to use this feature.")
-    
-# # Resume music 
-# @bot.command()
-# async def resume(ctx):
-#     if ctx.guild.id in authorisedMusicGuildIds:
-#         if ctx.author.voice and ctx.author.voice.channel:
-#             if ctx.voice_client.channel == ctx.author.voice.channel:
-#                 if not ctx.voice_client.is_playing():
-#                     ctx.voice_client.resume()
-#                     await ctx.send('Audio is resuming.')
-#             else:
-#                 await ctx.send("You are not connected to the same voice channel.")
-#         else:
-#             await ctx.send("You are not connected to a voice channel.")
-#     else:
-#         await ctx.send("This server is not authorised to use this feature.")
-
-# # Pause music
-# @bot.command()
-# async def pause(ctx):
-#     if ctx.guild.id in authorisedMusicGuildIds:
-#         if ctx.author.voice and ctx.author.voice.channel:
-#             if ctx.voice_client.channel == ctx.author.voice.channel:
-#                 if ctx.voice_client.is_playing():
-#                     ctx.voice_client.pause()
-#                     await ctx.send('Audio has been paused.')
-#             else:
-#                 await ctx.send("You are not connected to the same voice channel.")
-#         else:
-#             await ctx.send("You are not connected to a voice channel.")
-#     else:
-#         await ctx.send("This server is not authorised to use this feature.")
-
 # Disconnect bot
 @bot.command(aliases=['dc'])
 async def disconnect(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
 
-# Skip music
+# Skip
 @bot.command(aliases=['s'])
 async def skip(ctx):
     if ctx.author.voice and ctx.author.voice.channel:
@@ -291,7 +200,6 @@ def getAllPlayers(banned, guildId=None):
 # Format date_time into D/MM/YYYY
 def formatDateTime(dateTime):
     return datetime.datetime.strptime(dateTime, "%Y-%m-%d %H:%M:%S").date().strftime("%d/%m/%Y")
-
 
 ## Scheduled Functions
 # Check if any tracked player is banned
